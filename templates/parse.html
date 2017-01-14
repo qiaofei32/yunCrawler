@@ -1,0 +1,295 @@
+$def with (raw_html)
+<html xmlns="http://www.w3.org/1999/html">
+	<head>
+
+        $:raw_html["head"]
+
+		<link rel="stylesheet" href="/css/pretty-split-pane.css" />
+		<link rel="stylesheet" href="/css/split-pane.css" />
+        <link rel="stylesheet" href="/css/bootstrap.min.css">
+        <link rel="stylesheet" href="/css/bootstrap-theme.min.css">
+        <script src="/js/jquery-1.12.2.min.js"></script>
+        <script src="/js/split-pane.js"></script>
+        <style>
+            .dh_hover {
+                /*opacity: 0.8;*/
+                border: 3px solid #F70909;
+                background-color: cornflowerblue;
+                position: relative;
+                top: -1px;
+                left: -1px;
+            }
+        </style>
+
+		<style type="text/css">
+
+			html, body {
+				height: 100%;
+				min-height: 100%;
+				margin: 0;
+				padding: 0;
+			}
+
+            .yuncrawler-banner {
+                color: rgba(255, 255, 255, 0.44);
+                height: 80px;
+                text-align: center;
+                background: rgba(35, 67, 125, 0.88);
+                text-shadow: 1px 1px #fff;
+                line-height: 80px;
+                font-size: 30px;
+            }
+
+			#left-component {
+				right: 70%;
+				margin-right: 5px;
+			}
+
+			#my-divider {
+				right: 70%;
+				width: 5px;
+			}
+
+			#right-component {
+				width: 70%;
+			}
+		</style>
+	</head>
+	<body style="overflow: hidden;">
+        <input type="hidden" name="yuncrawler_url" id="yuncrawler_url" value='$:raw_html["url"]'/>
+        <div class="yuncrawler-banner">云爬虫</div>
+		<div class="pretty-split-pane-frame">
+			<div class="split-pane vertical-percent">
+				<div class="split-pane-component" id="left-component">
+					<div class="pretty-split-pane-component-inner">
+                        <div>   <!-- OUTPUT CONTENT -->
+                            <div><h4><button class="btn-primary" onclick="submit_crawl_request();">提交到云平台</button></h4></div>
+                            <hr>
+                            <div>
+                                <h4>已经选择的元素（当前选择的元素：<span id="item_current_choosen" class="btn-warning"></span>） </h4>
+                                <table class="table table-bordered">
+                                    <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>selector</th>
+                                        <th>operation</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody id="item_all_choosen">
+                                    </tbody>
+                                </table>
+                            </div>
+                            <hr>
+                            <div>
+                                <h4>当前匹配的元素（<span id="matches_count" class="">0个</span>）</h4>
+                                <ul id="item_match"></ul>
+                            </div>
+                            <hr>
+                            <div>
+                                <h4>
+                                    <button class="btn-primary" onclick="scan_pagination_mode();">获取翻页模式</button>
+                                    <button class="btn-primary" onclick="choose_item_mode();">退出翻页模式</button>
+                                </h4>
+                                <ul id="pagination_mode_ul"></ul>
+                                <div><h4>手动输入翻页模式：<input style="width: 100%;margin-top: 10px;" id="pagination_mode_text" type="text" placeholder=""/></h4></div>
+                            </div>
+                        </div>
+					</div>
+				</div>
+				<div class="split-pane-divider" id="my-divider"></div>
+				<div class="split-pane-component" id="right-component">
+					<div class="pretty-split-pane-component-inner">
+                        <div> <!-- HTML CONTENT START -->
+
+                            $:raw_html["body"]
+
+                        </div> <!-- HTML CONTENT END -->
+
+					</div>
+				</div>
+			</div>
+		</div>
+	</body>
+</html>
+
+<script>
+
+    function del_item(id) {
+        $$("#item_all_choosen_tr_"+id).hide();
+    }
+
+    function element_match_class(query) {
+//        console.log(query);
+        var len = $$(query).length;
+        return len;
+    }
+
+    function analyze_kclass(element, kclass) {
+        // page_item page-item-9088
+        arr_klass = kclass.split(/\s+/);
+        tem_klass = arr_klass.join(".");
+        tem_klass = "." + tem_klass;
+        var query = element + tem_klass;
+        var item_matches = element_match_class(query);
+        if(item_matches >= 2){
+            return kclass.trim();
+        }
+
+//        var kclass_matches = {};
+        var tmp_arr_kclass = new Array();
+        for(var i=0;i < arr_klass.length;i++){
+            query = element + "." + arr_klass[i];
+            item_matches = element_match_class(query);
+//            kclass_matches[arr_klass[i]] = item_matches;
+            if(item_matches >=2){
+                tmp_arr_kclass.push(arr_klass[i]);
+            }
+        }
+//        console.log(kclass_matches);
+        kclass = tmp_arr_kclass.join(" ");
+        return kclass.trim();
+    }
+
+    function choose_item_mode() {
+
+        $$("div#right-component *").unbind('click');
+        $$("div#right-component *").unbind('hover');
+
+        $$("div#right-component *").click(function(event){
+            event.stopPropagation();
+            var id = $$(this).attr("id");
+            if (id){
+                id = "#" + id;
+            }else {
+                id = "";
+            }
+
+            var obj = $$(this);
+            var element_list = new Array();
+            var klass = null;
+            while (1){
+//                console.log(obj);
+                element = obj.get(0).tagName.toLowerCase();
+                element_list.push(element);
+                klass = obj.attr("class");
+                if (klass){
+                    klass = klass.replace(/\s*dh_hover/, '');
+                }
+                if (klass) {
+                    klass = analyze_kclass(element, klass);
+                }
+                if (klass) {
+                    break;
+                } else {
+                    obj = obj.parent();
+                }
+            }
+            element_list = element_list.reverse();
+            klass = klass.split(/\s+/);
+            klass = klass.join(".");
+            klass = "." + klass;
+            element_list[0] = element_list[0] + klass;
+            var infos = element_list.join(" ");
+            console.log(infos);
+            $$("#item_current_choosen").text(infos);
+
+            var item_all_choosen_len = $$(".item_all_choosen_tr").length;
+            item_all_choosen_len += 1;
+            $$("#item_all_choosen").append('<tr class="item_all_choosen_tr" id="item_all_choosen_tr_'+item_all_choosen_len+'"><td>'+item_all_choosen_len+'</td><td class="item_all_choosen_td">'+infos+'</td><td><button class="btn-danger" onclick="del_item('+item_all_choosen_len+')">删除</button></td></tr>');
+
+            html = "";
+            var i = 0;
+            $$(infos).each(function () {
+                html += '<li>' + $$(this).text() + '</li>';
+                i++;
+                if(i>=10){
+                    html += '<li>（最多显示前10条）</li>';
+                    return false;
+                }
+            })
+            var matches_count = $$(infos).length;
+            $$("#matches_count").text(""+ matches_count+"个");
+            $$("#item_match").html(html);
+
+            return false;
+        })
+
+        $$("div#right-component *").hover(
+                function(event){
+                    event.stopPropagation();
+                    $$("div#right-component *").removeClass("dh_hover");
+                    $$(this).addClass("dh_hover");
+                    // $$(this).width($$(this).width()-2).height($$(this).height()-2);
+                },
+                function(event){
+//                event.stopPropagation();
+                    $$(this).removeClass("dh_hover");
+                    // $$(this).width($$(this).width()+2).height($$(this).height()+2);
+                }
+        )
+    }
+
+    function scan_pagination_mode() {
+//        alert("scan_pagination_mode!");
+        $$("div#right-component *").unbind('click');
+        $$("div#right-component *").unbind('hover');
+
+        $$("div#right-component *").click(function(event){
+            event.stopPropagation();
+            var obj = $$(this);
+            var element_list = new Array();
+            var href = null;
+            while (1){
+                element = obj.get(0).tagName.toLowerCase();
+                element_list.push(element);
+                href = obj.attr("href");
+                if (href) {
+                    break;
+                } else {
+                    obj = obj.parent();
+                }
+            }
+            var pagination_li_len = $$(".pagination_mode_li").length;
+            pagination_li_len += 1;
+            $$("#pagination_mode_ul").append('<li class="pagination_mode_li"><a href="'+href+'" target="_blank">'+href+'</li>');
+            return false;
+        })
+
+        $$("div#right-component *").hover(
+                function(event){
+                    event.stopPropagation();
+                    $$("div#right-component *").removeClass("dh_hover");
+                    $$(this).addClass("dh_hover");
+                    // $$(this).width($$(this).width()-2).height($$(this).height()-2);
+                },
+                function(event){
+//                event.stopPropagation();
+                    $$(this).removeClass("dh_hover");
+                    // $$(this).width($$(this).width()+2).height($$(this).height()+2);
+                })
+    }
+
+    function submit_crawl_request() {
+        var selected_items = new Array();
+        $$(".item_all_choosen_td").each(function () {
+            selected_items.push( $$(this).text() );
+        })
+        selected_items = selected_items.join("|");
+        var pagination = $$("#pagination_mode_text").val();
+        var yuncrawler_url = $$("#yuncrawler_url").val();
+
+        $$.ajax({
+            url: "/do/?selected_items="+selected_items+"&pagination="+pagination+"&task_url="+yuncrawler_url,
+            success: function(){
+                alert("submit!");
+            }
+        });
+    }
+
+    $$(document).ready(function () {
+        $$('div.split-pane').splitPane();
+        $$("body *").unbind('click');
+        choose_item_mode();
+    })
+
+</script>

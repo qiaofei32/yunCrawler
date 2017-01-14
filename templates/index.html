@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+        <title>新一代智能云爬虫</title>
+        <link rel="stylesheet" type="text/css" href="/css/app.css"/>
+    </head>
+    <body>
+    <form action="/parse/" method="get" id="form">
+        <div class="main">
+            <div class="step urlInput show" style="display: table-cell;">
+                <div style="color: wheat;">
+                   <h1>新一代智能云爬虫</h1>
+                </div>
+                <div class="urlLayer">
+                    <input class="urlInputIpt" type="text" placeholder="请输入网址" id="url" name="url">
+                    <div class="urlInputSubmit" onclick="submit_form();">开始爬取</div>
+                </div>
+            </div>
+
+        </div>
+    </body>
+    </form>
+</html>
+
+<script>
+function submit_form() {
+    var f = document.getElementById("form");
+    f.submit();
+}
+</script>

@@ -113,7 +113,8 @@ class Parse:
 				full_link_url = "%s://%s/%s" % (protocol, base_path, link_url)
 				css_links_rep.append((link_url, full_link_url))
 
-		js_links = dom("head script")
+		# js_links = dom("head script")
+		js_links = dom("script")
 		js_links_rep = []
 		for i in range(len(js_links)):
 			link_url = js_links.eq(i).attr("src")
@@ -195,6 +196,7 @@ class Do:
 					values.append(t)
 
 		data_frame = pandas.DataFrame(values, columns=columns)
+		data_frame = data_frame.drop_duplicates(subset=["Text"])
 		file_name = "result/result-%d.csv" %(time.time())
 		data_frame.to_csv(file_name, index=False)
 
